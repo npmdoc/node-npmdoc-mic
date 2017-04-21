@@ -1,0 +1,459 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/ashishbajaj99/mic#readme"
+
+    >mic (v2.1.1)</a>
+</h1>
+<h4>A simple stream wrapper for arecord (Linux (including Raspbian)) and sox (Mac/Windows). Returns a Passthrough stream object so that stream control like pause(), resume(), pipe(), etc. are all available.</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.mic">module mic</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.mic.mic">
+            function <span class="apidocSignatureSpan"></span>mic
+            <span class="apidocSignatureSpan">(options)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.mic.silenceTransform">
+            function <span class="apidocSignatureSpan">mic.</span>silenceTransform
+            <span class="apidocSignatureSpan">(options)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <span class="apidocSignatureSpan">object <span class="apidocSignatureSpan">mic.</span>silenceTransform.prototype</span>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.mic.silenceTransform">module mic.silenceTransform</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.mic.silenceTransform.silenceTransform">
+            function <span class="apidocSignatureSpan">mic.</span>silenceTransform
+            <span class="apidocSignatureSpan">(options)</span>
+            </a>
+
+        </li>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.mic.silenceTransform.super_">
+            function <span class="apidocSignatureSpan">mic.silenceTransform.</span>super_
+            <span class="apidocSignatureSpan">(options)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.mic.silenceTransform.prototype">module mic.silenceTransform.prototype</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.mic.silenceTransform.prototype._transform">
+            function <span class="apidocSignatureSpan">mic.silenceTransform.prototype.</span>_transform
+            <span class="apidocSignatureSpan">(chunk, encoding, callback)</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.mic" id="apidoc.module.mic">module mic</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.mic.mic" id="apidoc.element.mic.mic">
+        function <span class="apidocSignatureSpan"></span>mic
+        <span class="apidocSignatureSpan">(options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function mic(options) {
+    options = options || {};
+    var that = {};
+    var endian = options.endian || &#x27;little&#x27;;
+    var bitwidth = options.bitwidth || &#x27;16&#x27;;
+    var encoding = options.encoding || &#x27;signed-integer&#x27;;
+    var rate = options.rate || &#x27;16000&#x27;;
+    var channels = options.channels || &#x27;1&#x27;;
+    var device = options.device || &#x27;plughw:1,0&#x27;;
+    var exitOnSilence = options.exitOnSilence || 0;
+    var debug = options.debug || false;
+    var format, formatEndian, formatEncoding;
+    var audioProcess = null;
+    var infoStream = new PassThrough;
+    var audioStream = new IsSilence({debug: debug});
+    var audioProcessOptions = {
+        stdio: [&#x27;ignore&#x27;, &#x27;pipe&#x27;, &#x27;ignore&#x27;]
+    };
+
+    if(debug) {
+        audioProcessOptions.stdio[2] = &#x27;pipe&#x27;;
+    }
+
+    // Setup format variable for arecord call
+    if(endian === &#x27;big&#x27;) {
+        formatEndian = &#x27;BE&#x27;;
+    } else {
+        formatEndian = &#x27;LE&#x27;;
+    }
+    if(encoding === &#x27;unsigned-integer&#x27;) {
+        formatEncoding = &#x27;U&#x27;;
+    } else {
+        formatEncoding = &#x27;S&#x27;;
+    }
+    format = formatEncoding + bitwidth + &#x27;_&#x27; + formatEndian;
+    audioStream.setNumSilenceFramesExitThresh(parseInt(exitOnSilence, 10));
+
+    that.start = function start() {
+        if(audioProcess === null) {
+            audioProcess = isMac
+            ? spawn(&#x27;rec&#x27;, [&#x27;-b&#x27;, bitwidth, &#x27;--endian&#x27;, endian, &#x27;-c&#x27;, channels, &#x27;-r&#x27;, rate, &#x27;-e&#x27;, encoding, &#x27;-t&#x27;, &#x27;raw&#x27;, &#x27;-&#x27;], audioProcessOptions
+)
+            : spawn(&#x27;arecord&#x27;, [&#x27;-c&#x27;, channels, &#x27;-r&#x27;, rate, &#x27;-f&#x27;, format, &#x27;-D&#x27;, device], audioProcessOptions);
+            audioProcess.on(&#x27;exit&#x27;, function(code, sig) {
+                    if(code != null &#x26;&#x26; sig === null) {
+                        audioStream.emit(&#x27;audioProcessExitComplete&#x27;);
+                        if(debug) console.log(&#x22;recording audioProcess has exited with code = %d&#x22;, code);
+                    }
+                });
+            audioProcess.stdout.pipe(audioStream);
+            if(debug) {
+                audioProcess.stderr.pipe(infoStream);
+            }
+            audioStream.emit(&#x27;startComplete&#x27;);
+        } else {
+            if(debug) {
+                throw new Error(&#x22;Duplicate calls to start(): Microphone already started!&#x22;);
+            }
+        }
+    };
+
+    that.stop = function stop() {
+        if(audioProcess != null) {
+            audioProcess.kill(&#x27;SIGTERM&#x27;);
+            audioProcess = null;
+            audioStream.emit(&#x27;stopComplete&#x27;);
+            if(debug) console.log(&#x22;Microhphone stopped&#x22;);
+        }
+    };
+
+    that.pause = function pause() {
+        if(audioProcess != null) {
+            audioProcess.kill(&#x27;SIGSTOP&#x27;);
+            audioStream.pause();
+            audioStream.emit(&#x27;pauseComplete&#x27;);
+            if(debug) console.log(&#x22;Microphone paused&#x22;);
+        }
+    };
+
+    that.resume = function resume() {
+        if(audioProcess != null) {
+            audioProcess.kill(&#x27;SIGCONT&#x27;);
+            audioStream.resume();
+            audioStream.emit(&#x27;resumeComplete&#x27;);
+            if(debug) console.log(&#x22;Microphone resumed&#x22;);
+        }
+    }
+
+    that.getAudioStream = function getAudioStream() {
+        return audioStream;
+    }
+
+    if(debug) {
+        infoStream.on(&#x27;data&#x27;, function(data) {
+                console.log(&#x22;Received Info: &#x22; + data);
+            });
+        infoStream.on(&#x27;error&#x27;, function(error) {
+                console.log(&#x22;Error in Info Stream: &#x22; + error);
+            });
+    }
+
+    return that;
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.mic.silenceTransform" id="apidoc.element.mic.silenceTransform">
+        function <span class="apidocSignatureSpan">mic.</span>silenceTransform
+        <span class="apidocSignatureSpan">(options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function IsSilence(options) {
+    var that = this;
+    if (options &#x26;&#x26; options.debug) {
+      that.debug = options.debug;
+      delete options.debug;
+    }
+    Transform.call(that, options);
+    var consecSilenceCount = 0;
+    var numSilenceFramesExitThresh = 0;
+
+    that.getNumSilenceFramesExitThresh = function getNumSilenceFramesExitThresh() {
+        return numSilenceFramesExitThresh;
+    };
+
+    that.getConsecSilenceCount = function getConsecSilenceCount() {
+        return consecSilenceCount;
+    };
+
+    that.setNumSilenceFramesExitThresh = function setNumSilenceFramesExitThresh(numFrames) {
+        numSilenceFramesExitThresh = numFrames;
+        return;
+    };
+
+    that.incrConsecSilenceCount = function incrConsecSilenceCount() {
+        consecSilenceCount++;
+        return consecSilenceCount;
+    };
+
+    that.resetConsecSilenceCount = function resetConsecSilenceCount() {
+        consecSilenceCount = 0;
+        return;
+    };
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.mic.silenceTransform" id="apidoc.module.mic.silenceTransform">module mic.silenceTransform</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.mic.silenceTransform.silenceTransform" id="apidoc.element.mic.silenceTransform.silenceTransform">
+        function <span class="apidocSignatureSpan">mic.</span>silenceTransform
+        <span class="apidocSignatureSpan">(options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function IsSilence(options) {
+    var that = this;
+    if (options &#x26;&#x26; options.debug) {
+      that.debug = options.debug;
+      delete options.debug;
+    }
+    Transform.call(that, options);
+    var consecSilenceCount = 0;
+    var numSilenceFramesExitThresh = 0;
+
+    that.getNumSilenceFramesExitThresh = function getNumSilenceFramesExitThresh() {
+        return numSilenceFramesExitThresh;
+    };
+
+    that.getConsecSilenceCount = function getConsecSilenceCount() {
+        return consecSilenceCount;
+    };
+
+    that.setNumSilenceFramesExitThresh = function setNumSilenceFramesExitThresh(numFrames) {
+        numSilenceFramesExitThresh = numFrames;
+        return;
+    };
+
+    that.incrConsecSilenceCount = function incrConsecSilenceCount() {
+        consecSilenceCount++;
+        return consecSilenceCount;
+    };
+
+    that.resetConsecSilenceCount = function resetConsecSilenceCount() {
+        consecSilenceCount = 0;
+        return;
+    };
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+
+    <h2>
+        <a href="#apidoc.element.mic.silenceTransform.super_" id="apidoc.element.mic.silenceTransform.super_">
+        function <span class="apidocSignatureSpan">mic.silenceTransform.</span>super_
+        <span class="apidocSignatureSpan">(options)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function Transform(options) {
+  if (!(this instanceof Transform))
+    return new Transform(options);
+
+  Duplex.call(this, options);
+
+  this._transformState = new TransformState(this);
+
+  var stream = this;
+
+  // start out asking for a readable event once data is transformed.
+  this._readableState.needReadable = true;
+
+  // we have implemented the _read method, and done the other things
+  // that Readable wants before the first _read call, so unset the
+  // sync guard flag.
+  this._readableState.sync = false;
+
+  if (options) {
+    if (typeof options.transform === &#x27;function&#x27;)
+      this._transform = options.transform;
+
+    if (typeof options.flush === &#x27;function&#x27;)
+      this._flush = options.flush;
+  }
+
+  // When the writable side finishes, then flush out anything remaining.
+  this.once(&#x27;prefinish&#x27;, function() {
+    if (typeof this._flush === &#x27;function&#x27;)
+      this._flush(function(er) {
+        done(stream, er);
+      });
+    else
+      done(stream);
+  });
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.mic.silenceTransform.prototype" id="apidoc.module.mic.silenceTransform.prototype">module mic.silenceTransform.prototype</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.mic.silenceTransform.prototype._transform" id="apidoc.element.mic.silenceTransform.prototype._transform">
+        function <span class="apidocSignatureSpan">mic.silenceTransform.prototype.</span>_transform
+        <span class="apidocSignatureSpan">(chunk, encoding, callback)</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">_transform = function (chunk, encoding, callback) {
+    var i;
+    var speechSample;
+    var silenceLength = 0;
+    var self = this;
+    var debug = self.debug;
+    var consecutiveSilence = self.getConsecSilenceCount();
+    var numSilenceFramesExitThresh = self.getNumSilenceFramesExitThresh();
+    var incrementConsecSilence = self.incrConsecSilenceCount;
+    var resetConsecSilence = self.resetConsecSilenceCount;
+
+    if(numSilenceFramesExitThresh) {
+        for(i=0; i&#x3c;chunk.length; i=i+2) {
+            if(chunk[i+1] &#x3e; 128) {
+                speechSample = (chunk[i+1] - 256) * 256;
+            } else {
+                speechSample = chunk[i+1] * 256;
+            }
+            speechSample += chunk[i];
+
+            if(Math.abs(speechSample) &#x3e; 2000) {
+                if (debug) {
+                  console.log(&#x22;Found speech block&#x22;);
+                }
+                resetConsecSilence();
+                break;
+            } else {
+                silenceLength++;
+            }
+
+        }
+        if(silenceLength == chunk.length/2) {
+            consecutiveSilence = incrementConsecSilence();
+            if (debug) {
+              console.log(&#x22;Found silence block: %d of %d&#x22;, consecutiveSilence, numSilenceFramesExitThresh);
+            }
+            //emit &#x27;silence&#x27; only once each time the threshold condition is met
+            if( consecutiveSilence === numSilenceFramesExitThresh) {
+                self.emit(&#x27;silence&#x27;);
+            }
+        }
+    }
+    this.push(chunk);
+    callback();
+}</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
